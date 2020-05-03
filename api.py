@@ -3,6 +3,16 @@ import flask_api
 from flask import request, jsonify
 from flask_api import status, exceptions
 from flask_dynamo import Dynamo
+import boto3
+from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key, Attr
+import json
+import decimal
+
+#   start dynamo with
+#                   java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
+#   run 'flask init' to initialize the database
+#   run 'flask run' to run the microservice
 
 # app instance
 app = flask_api.FlaskAPI(__name__)
@@ -19,6 +29,18 @@ app.config['DYNAMO_TABLES'] = [
 
 # Pass app to the Dynamo constructor
 dynamo = Dynamo(app)
+
+# Helper class to convert a DynamoDB item to JSON.
+# Credit from  https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.03.html#GettingStarted.Python.03.02
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            if o % 1 > 0:
+                return float(o)
+            else:
+                return int(o)
+        return super(DecimalEncoder, self).default(o)
+
 
 # Initialize the database by running 'flask init'
 @app.cli.command('init')
@@ -48,41 +70,78 @@ def home():
 # Get all posts
 @app.route('/api/v2/resources/posts/all', methods=['GET'])
 def all_posts():
-    pass
-   
+    try:
+        response = dynamo.tables['posts'].scan()
+        return (json.dumps(response['Items'], cls=DecimalEncoder)), status.HTTP_200_OK
+    except:
+        return("Failed"), status.HTTP_404_NOT_FOUND
+
 
 # Get post by id and delete post by id
 @app.route('/api/v2/resources/posts/<int:id>', methods=['GET', 'DELETE'])
 def post(id):
     if request.method == 'GET':
         with app.app_context():
-            response = dynamo.tables['posts'].get_item(
+            try:
+                response = dynamo.tables['posts'].get_item(
+                Key={
+                    'id': id
+                    }
+                    )
+                item = response['Item']
+                return(json.dumps(item, indent=4, cls=DecimalEncoder)), status.HTTP_200_OK
+            except:
+                return("Post unavailable!"), status.HTTP_404_NOT_FOUND
+    elif request.method == 'DELETE':
+        try:
+            response = dynamo.tables['posts'].delete_item(
             Key={
                 'id': id,
-                }
-                )
-            return str(response['Item']), status.HTTP_200_OK
-    elif request.method == 'DELETE':
-        pass
+            }
+        )
+        except ClientError as e:
+            if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+                return(e.response['Error']['Message'])
+            else:
+                raise
+        else:
+            print("DeleteItem succeeded!")
+            return(json.dumps(response, indent=4, cls=DecimalEncoder))
 
 # POST request for a new post
-@app.route('/api/v1/resources/posts', methods=['POST'])
+@app.route('/api/v2/resources/posts', methods = ['POST'])
 def posts():
     if request.method == 'POST':
-        pass
+        return create_post(request.data)
 
 # Create a post
 def create_post(post):
-    pass
+    posted_fields = {*post.keys()}
+    required_fields = {'id', 'title', 'body', 'user', 'sub', 'url', 'posted_time'}
+
+    if not required_fields <= posted_fields:
+        message = f'Missing fields: {required_fields - posted_fields}'
+        raise exceptions.ParseError(message)
+    try:
+        response = dynamo.tables['posts'].put_item(
+        Item={
+            **post
+        }
+        )
+    except Exception as e:
+        return { 'error': str(e) }, status.HTTP_409_CONFLICT
+
+    return (json.dumps(response, indent=4, cls=DecimalEncoder)), status.HTTP_201_CREATED, {
+        'Location': f'/api/v2/resources/posts/{post["id"]}'
+    }
 
 # Get n most recent posts from all communities
-@app.route('/api/v1/resources/posts/recent/<int:number_of_posts>', methods=['GET'])
+@app.route('/api/v1/resources/posts/recent/<int:number_of_posts>', methods = ['GET'])
 def recent_posts(number_of_posts):
     pass
 
 
 # Get n most recent posts from specific community
-@app.route('/api/v1/resources/posts/recent/<string:sub>/<int:number_of_posts>', methods=['GET'])
+@app.route('/api/v1/resources/posts/recent/<string:sub>/<int:number_of_posts>', methods = ['GET'])
 def recent_posts_sub(sub, number_of_posts):
     pass
-
