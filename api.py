@@ -66,7 +66,7 @@ def init_db():
 @app.route('/', methods=['GET'])
 def home():
     return '''<h1>The New Reddit</h1>
-<p>Welcome to the new reddit for posts...</p>'''
+<p>Welcome to the new reddit microservice for posts...</p>'''
 
 
 # Get all posts
@@ -147,7 +147,10 @@ def recent_posts(number_of_posts):
         response = dynamo.tables['posts'].scan(
             FilterExpression = fe
         )
-        return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
+        if(not response['Items']):
+            return("<h1>404 NOT FOUND</h1><br><h2>Sorry, this post is gone.<h2>"), status.HTTP_404_NOT_FOUND 
+        else:
+            return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
     except:
         return("<h1>404 NOT FOUND</h1><br>"), status.HTTP_404_NOT_FOUND
 
@@ -160,6 +163,9 @@ def recent_posts_sub(sub, number_of_posts):
         response = dynamo.tables['posts'].scan(
             FilterExpression = fe
         )
-        return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
+        if(not response['Items']):
+            return("<h1>404 NOT FOUND</h1><br><h2>Sorry, this post is gone.<h2>"), status.HTTP_404_NOT_FOUND 
+        else:
+            return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
     except:
         return("<h1>404 NOT FOUND</h1><br>"), status.HTTP_404_NOT_FOUND
