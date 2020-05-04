@@ -17,12 +17,14 @@ import decimal
 # app instance
 app = flask_api.FlaskAPI(__name__)
 
-# Table definitions
+# Table definitions and key definitions
 app.config['DYNAMO_TABLES'] = [
     dict(
         TableName='posts',
-        KeySchema=[dict(AttributeName='id', KeyType='HASH')],
-        AttributeDefinitions=[dict(AttributeName='id', AttributeType='N')],
+        KeySchema=[dict(AttributeName='id', KeyType='HASH'),
+        dict(AttributeName='sub', KeyType='RANGE')],
+        AttributeDefinitions=[dict(AttributeName='id', AttributeType='N'),
+        dict(AttributeName='sub', AttributeType='S')],
         ProvisionedThroughput=dict(ReadCapacityUnits=5, WriteCapacityUnits=5)
     )
 ]
@@ -77,26 +79,27 @@ def all_posts():
         return("Failed"), status.HTTP_404_NOT_FOUND
 
 
-# Get post by id and delete post by id
-@app.route('/api/v2/resources/posts/<int:id>', methods=['GET', 'DELETE'])
-def post(id):
+# Get post by id and delete post by id *** user specificies the sub ***
+@app.route('/api/v2/resources/posts/<string:sub>/<int:id>', methods=['GET', 'DELETE'])
+def post(id, sub):
     if request.method == 'GET':
         with app.app_context():
             try:
                 response = dynamo.tables['posts'].get_item(
                 Key={
-                    'id': id
-                    }
-                    )
+                'id': id,
+                'sub': sub,
+                })
                 item = response['Item']
-                return(json.dumps(item, indent=4, cls=DecimalEncoder)), status.HTTP_200_OK
+                return(json.dumps(item, indent=4, cls=DecimalEncoder)), status.HTTP_200_OK  
             except:
-                return("Post unavailable!"), status.HTTP_404_NOT_FOUND
+                return("<h1>404 NOT FOUND</h1><br><h2>post unavailable</h2>"), status.HTTP_404_NOT_FOUND
     elif request.method == 'DELETE':
         try:
             response = dynamo.tables['posts'].delete_item(
             Key={
                 'id': id,
+                'sub': sub,
             }
         )
         except ClientError as e:
@@ -106,7 +109,8 @@ def post(id):
                 raise
         else:
             print("DeleteItem succeeded!")
-            return(json.dumps(response, indent=4, cls=DecimalEncoder))
+            return(json.dumps(response, indent=4, cls=DecimalEncoder))     
+    
 
 # POST request for a new post
 @app.route('/api/v2/resources/posts', methods = ['POST'])
@@ -136,12 +140,26 @@ def create_post(post):
     }
 
 # Get n most recent posts from all communities
-@app.route('/api/v1/resources/posts/recent/<int:number_of_posts>', methods = ['GET'])
+@app.route('/api/v2/resources/posts/recent/<int:number_of_posts>', methods = ['GET'])
 def recent_posts(number_of_posts):
-    pass
+    try:
+        fe = Key('id').between(0, number_of_posts)
+        response = dynamo.tables['posts'].scan(
+            FilterExpression = fe
+        )
+        return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
+    except:
+        return("<h1>404 NOT FOUND</h1><br>"), status.HTTP_404_NOT_FOUND
 
 
 # Get n most recent posts from specific community
-@app.route('/api/v1/resources/posts/recent/<string:sub>/<int:number_of_posts>', methods = ['GET'])
+@app.route('/api/v2/resources/posts/recent/<string:sub>/<int:number_of_posts>', methods = ['GET'])
 def recent_posts_sub(sub, number_of_posts):
-    pass
+    try:
+        fe = Key('id').between(0, number_of_posts) and Key('sub').begins_with(sub)
+        response = dynamo.tables['posts'].scan(
+            FilterExpression = fe
+        )
+        return(json.dumps(response['Items'], indent=4, cls=DecimalEncoder))
+    except:
+        return("<h1>404 NOT FOUND</h1><br>"), status.HTTP_404_NOT_FOUND
