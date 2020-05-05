@@ -1,6 +1,13 @@
 # Reddit-Microservices-v2
 
 ## Shane Spangenberg, Brendon Linthurst, Collin Campbell
+#### Install dependencies for AWS, DynamoDB, boto3, and Redis
+
+```sudo apt install --yes awscli``` <br>
+```sudo apt install --yes python3-boto3``` <br>
+```pip3 install --user flask-dynamo``` <br>
+```sudo apt install --yes redis python3-hiredis```<br>
+```pip3 install --user Flask-and-Redis```
 
 #### Before running initialize the database by running  ```flask init```
 
