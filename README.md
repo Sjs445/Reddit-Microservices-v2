@@ -77,3 +77,53 @@ Simply returns the most recent posts limited to size n from every community.
 
 Simply returns the most recent posts limited to size n from a specified community.
 
+### Retrieve all posts that have votes.
+
+```/votes/all``` Method = GET
+
+View all posts receiving votes
+
+### Upvote a post
+
+```/upvote/<int:id>``` Method = GET / PUT
+
+When a PUT is requested, it will upvote the post with id matching the request.
+
+e.g. ```curl -X PUT http://localhost:5000/upvote/1```
+
+When a GET is requested, it simply shows the number of upvotes
+
+### Downvote a post
+
+```/downvote/<int:id>``` Method = GET / PUT
+
+When a PUT is requested, it will downvote the post with id matching the request.
+
+e.g. ```curl -X PUT http://localhost:5000/downvote/1```
+
+When a GET is requested, it simply shows the number of downvotes
+
+### Retrieve total votes for post with ID
+
+```/votes/<int:id>``` Method = GET
+
+Returns upvotes and downvotes for a post
+
+### List top N scoring posts
+
+```/top/<int:id>``` Method = GET
+
+View the top N scoring post where N = id
+
+### Return sorted list by score for all
+
+```/votes/highscore``` Method = GET
+
+View the top scoring posts sorted by score.
+
+### Seed fake voting data
+
+```/debug/create``` Method = GET
+
+You may wish to create fake vote data. Calling a GET request will seed the Redis database with 10 posts with serialized ID and random number of upvotes and downvotes.
+
