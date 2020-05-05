@@ -77,6 +77,8 @@ Simply returns the most recent posts limited to size n from every community.
 
 Simply returns the most recent posts limited to size n from a specified community.
 
+## Vote routes
+
 ### Retrieve all posts that have votes.
 
 ```/votes/all``` Method = GET
