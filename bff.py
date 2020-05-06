@@ -7,17 +7,17 @@ app = flask_api.FlaskAPI(__name__)
 
 @app.route("/")
 def main():
-    response = requests.get("http://localhost:5000/").text
+    response = requests.get("http://localhost:2015/posts").text
     return response
 
 @app.route("/<string:community>", methods=['GET'])
 def top_25_Posts(community):
-    response = requests.get('http://localhost:5000/api/v2/resources/posts/recent/' + community + "/25")
+    response = requests.get('http://localhost:2015/posts/api/v2/resources/posts/recent/' + community + "/25")
     rData = response.json()
     fg = FeedGenerator()
     fg.id(community)
     fg.title(community + " top 25 posts")
-    fg.link(href='http://localhost:5000/api/v2/resources/posts/recent/' + community + "/25")
+    fg.link(href='http://localhost:2015/posts/api/v2/resources/posts/recent/' + community + "/25")
     fg.description("This feed is to generate the top posts from a specific sub.")
 
     for post in rData:
@@ -34,12 +34,12 @@ def top_25_Posts(community):
 
 @app.route("/all", methods=['GET'])
 def all_top_25_Posts():
-    response = requests.get("http://localhost:5000/api/v2/resources/posts/recent/25")
+    response = requests.get("http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     rData = response.json()
     fg = FeedGenerator()
     fg.id("Top_Posts")
     fg.title("Top 25 posts")
-    fg.link(href="http://localhost:5000/api/v2/resources/posts/recent/25")
+    fg.link(href="http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     fg.description("This feed is to generate the top posts from the entire site")
 
     for post in rData:
@@ -55,12 +55,12 @@ def all_top_25_Posts():
 
 @app.route("/votes/<string:community>", methods=['GET'])
 def top_25_Posts_Votes(community):
-    response = requests.get('http://localhost:5000/api/v2/resources/posts/recent/' + community + "/25")
+    response = requests.get('http://localhost:2015/posts/api/v2/resources/posts/recent/' + community + "/25")
     rData = response.json()
     fg = FeedGenerator()
     fg.id(community)
     fg.title(community + " top 25 posts")
-    fg.link(href='http://localhost:5000/api/v2/resources/posts/recent/' + community + "/25")
+    fg.link(href='http://localhost:2015/posts/api/v2/resources/posts/recent/' + community + "/25")
     fg.description("This feed is to generate the top posts from a specific sub.")
 
     for post in rData:
@@ -76,12 +76,12 @@ def top_25_Posts_Votes(community):
 
 @app.route("/postVotes", methods=['GET'])
 def all_top_25_Posts_Votes():
-    response = requests.get("http://localhost:5000/api/v2/resources/posts/recent/25")
+    response = requests.get("http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     rData = response.json()
     fg = FeedGenerator()
     fg.id("Top_Posts")
     fg.title("Top 25 posts")
-    fg.link(href="http://localhost:5000/api/v2/resources/posts/recent/25")
+    fg.link(href="http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     fg.description("This feed is to generate the top posts from the entire site")
 
     for post in rData:
@@ -97,13 +97,13 @@ def all_top_25_Posts_Votes():
 
 @app.route("/reddit")
 def all():
-    response = requests.get("http://localhost:5000/api/v2/resources/posts/recent/25")
+    response = requests.get("http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     rData = response.json()
     post = response.json()
     fg = FeedGenerator()
     fg.id("Top_Posts")
     fg.title("Top 25 posts")
-    fg.link(href="http://localhost:5000/api/v2/resources/posts/recent/25")
+    fg.link(href="http://localhost:2015/posts/api/v2/resources/posts/recent/25")
     fg.description("This feed is to generate the top posts from the entire site")
 
     for post in rData:
@@ -118,4 +118,4 @@ def all():
     return rssFeed
 
 if __name__=="__main__":
-    app.run(host='127.0.0.2', debug=True)
+    app.run(host='127.0.0.1', debug=True)
